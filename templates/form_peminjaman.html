@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Catat Peminjaman{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">+ CATAT PEMINJAMAN</div>
+    <div class="page-subtitle">Rekam transaksi peminjaman barang baru</div>
+  </div>
+  <a href="{{ url_for('peminjaman') }}" class="btn btn-outline btn-sm">← Kembali</a>
+</div>
+<div class="content" style="max-width:680px">
+  {% if error %}
+  <div class="alert alert-danger">⚠ {{ error }}</div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">// DETAIL PEMINJAMAN</span>
+    </div>
+    <div class="card-body" style="padding:28px">
+      <form method="post">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Barang yang Dipinjam *</label>
+            <select name="barang_id" required id="barang-select">
+              <option value="">— Pilih Barang —</option>
+              {% for b in barang_list %}
+              <option value="{{ b.id }}" data-stok="{{ b.stok }}" data-satuan="{{ b.satuan }}"
+                {{ 'selected' if (data.barang_id|string)==(b.id|string) }}>
+                [{{ b.kode }}] {{ b.nama }} — Stok: {{ b.stok }} {{ b.satuan }}
+              </option>
+              {% endfor %}
+            </select>
+            <div id="stok-info" style="font-size:.75rem;color:var(--muted);margin-top:4px"></div>
+          </div>
+          <div class="form-group">
+            <label>Nama Peminjam *</label>
+            <input type="text" name="peminjam" value="{{ data.peminjam or '' }}" placeholder="Nama lengkap" required>
+          </div>
+          <div class="form-group">
+            <label>Divisi / Departemen</label>
+            <select name="divisi">
+              <option value="">— Pilih Divisi —</option>
+              {% for div in ['IT','HR','Finance','Marketing','Operasional','Sales','Legal','R&D','Lainnya'] %}
+              <option value="{{ div }}" {{ 'selected' if (data.divisi or '')==div }}>{{ div }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Jumlah *</label>
+            <input type="number" name="jumlah" value="{{ data.jumlah or 1 }}" min="1" required id="jumlah-input">
+          </div>
+          <div class="form-group">
+            <label>Tanggal Pinjam *</label>
+            <input type="date" name="tanggal_pinjam" value="{{ data.tanggal_pinjam or '' }}" required>
+          </div>
+          <div class="form-group full">
+            <label>Keterangan</label>
+            <textarea name="keterangan" placeholder="Keperluan peminjaman, catatan khusus, dll...">{{ data.keterangan or '' }}</textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:24px">
+          <button type="submit" class="btn btn-primary">✓ Simpan Peminjaman</button>
+          <a href="{{ url_for('peminjaman') }}" class="btn btn-outline">Batal</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+const sel = document.getElementById('barang-select');
+const info = document.getElementById('stok-info');
+sel.addEventListener('change', function() {
+  const opt = this.options[this.selectedIndex];
+  if (opt.value) {
+    const stok = opt.dataset.stok;
+    const satuan = opt.dataset.satuan;
+    info.innerHTML = `Stok tersedia: <strong style="color:var(--accent)">${stok} ${satuan}</strong>`;
+    document.getElementById('jumlah-input').max = stok;
+  } else {
+    info.innerHTML = '';
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Peminjaman{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">◷ RIWAYAT PEMINJAMAN</div>
+    <div class="page-subtitle">Kelola transaksi peminjaman barang</div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <a href="{{ url_for('export_peminjaman') }}" class="btn btn-export btn-sm">↓ Export CSV</a>
+    <a href="{{ url_for('tambah_peminjaman') }}" class="btn btn-primary btn-sm">+ Catat Peminjaman</a>
+  </div>
+</div>
+<div class="content">
+  <!-- FILTER -->
+  <form method="get" class="search-bar">
+    <input type="text" name="q" value="{{ q }}" placeholder="🔍  Cari peminjam atau nama barang...">
+    <select name="status">
+      <option value="">Semua Status</option>
+      <option value="dipinjam" {{ 'selected' if status=='dipinjam' }}>Sedang Dipinjam</option>
+      <option value="dikembalikan" {{ 'selected' if status=='dikembalikan' }}>Sudah Dikembalikan</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    {% if q or status %}<a href="{{ url_for('peminjaman') }}" class="btn btn-outline">Reset</a>{% endif %}
+  </form>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">// {{ records|length }} TRANSAKSI</span>
+      {% set active = records|selectattr('status','equalto','dipinjam')|list|length %}
+      {% if active > 0 %}
+      <span class="badge badge-warning">{{ active }} aktif</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if records %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Barang</th>
+            <th>Peminjam</th>
+            <th>Jumlah</th>
+            <th>Tgl Pinjam</th>
+            <th>Tgl Kembali</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td style="font-family:var(--mono);font-size:.75rem;color:var(--muted)">{{ r.id }}</td>
+            <td>
+              <div style="font-weight:500">{{ r.nama_barang }}</div>
+              <div style="font-size:.72rem;color:var(--muted);font-family:var(--mono)">{{ r.kode }}</div>
+            </td>
+            <td>
+              <div style="font-weight:500">{{ r.peminjam }}</div>
+              <div style="font-size:.72rem;color:var(--muted)">{{ r.divisi or '-' }}</div>
+            </td>
+            <td>
+              <span style="font-family:var(--mono);font-weight:700">{{ r.jumlah }}</span>
+              <span style="font-size:.72rem;color:var(--muted)"> {{ r.satuan }}</span>
+            </td>
+            <td style="font-family:var(--mono);font-size:.8rem">{{ r.tanggal_pinjam }}</td>
+            <td style="font-family:var(--mono);font-size:.8rem">{{ r.tanggal_kembali or '—' }}</td>
+            <td>
+              {% if r.status == 'dipinjam' %}
+                <span class="badge badge-warning">Dipinjam</span>
+              {% else %}
+                <span class="badge badge-success">Dikembalikan</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.status == 'dipinjam' %}
+              <form method="post" action="{{ url_for('kembalikan', id=r.id) }}" onsubmit="return confirm('Konfirmasi pengembalian oleh {{ r.peminjam }}?')">
+                <button type="submit" class="btn btn-success btn-sm">✓ Kembalikan</button>
+              </form>
+              {% else %}
+              <span style="font-size:.75rem;color:var(--muted)">Selesai</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">◷</div>
+        <div>Belum ada riwayat peminjaman</div>
+        <a href="{{ url_for('tambah_peminjaman') }}" class="btn btn-primary" style="margin-top:16px">+ Catat Peminjaman</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

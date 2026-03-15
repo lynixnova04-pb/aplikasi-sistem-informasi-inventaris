@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">◈ DASHBOARD</div>
+    <div class="page-subtitle">Ringkasan sistem inventaris</div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <a href="{{ url_for('export_barang') }}" class="btn btn-export btn-sm">↓ Export Barang</a>
+    <a href="{{ url_for('export_peminjaman') }}" class="btn btn-export btn-sm">↓ Export Peminjaman</a>
+  </div>
+</div>
+<div class="content">
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid">
+    <div class="stat-card" style="--card-accent: var(--accent)">
+      <div class="stat-label">Total Barang</div>
+      <div class="stat-value">{{ total_barang }}</div>
+      <div class="stat-icon">◻</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">jenis barang terdaftar</div>
+    </div>
+    <div class="stat-card" style="--card-accent: #7c3aed">
+      <div class="stat-label">Total Stok</div>
+      <div class="stat-value">{{ total_stok }}</div>
+      <div class="stat-icon">▦</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">unit tersedia di gudang</div>
+    </div>
+    <div class="stat-card" style="--card-accent: var(--accent3)">
+      <div class="stat-label">Sedang Dipinjam</div>
+      <div class="stat-value">{{ dipinjam }}</div>
+      <div class="stat-icon">◷</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">transaksi aktif</div>
+    </div>
+    <div class="stat-card" style="--card-accent: var(--danger)">
+      <div class="stat-label">Stok Rendah</div>
+      <div class="stat-value" style="color:{% if stok_rendah > 0 %}var(--danger){% else %}var(--text){% endif %}">{{ stok_rendah }}</div>
+      <div class="stat-icon">⚠</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">barang perlu restock</div>
+    </div>
+  </div>
+
+  <!-- CHART + STOK RENDAH -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">// DISTRIBUSI STOK PER KATEGORI</span>
+      </div>
+      <div class="card-body" style="padding:24px">
+        <canvas id="chartKategori"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">// PERINGATAN STOK RENDAH</span>
+        <a href="{{ url_for('barang') }}" class="btn btn-outline btn-sm">Lihat Semua</a>
+      </div>
+      <div class="card-body">
+        {% if stok_rendah_list %}
+        <table>
+          <thead><tr><th>Barang</th><th>Stok</th><th>Minimum</th></tr></thead>
+          <tbody>
+          {% for item in stok_rendah_list %}
+          <tr>
+            <td>
+              <div style="font-weight:500">{{ item.nama }}</div>
+              <div style="font-size:.72rem;color:var(--muted);font-family:var(--mono)">{{ item.kode }}</div>
+            </td>
+            <td>
+              <span class="badge badge-danger">{{ item.stok }}</span>
+            </td>
+            <td style="color:var(--muted);font-size:.8rem">min {{ item.stok_min }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state"><div class="empty-icon">✓</div>Semua stok aman</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM SECTION -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">// AKTIVITAS PEMINJAMAN TERBARU</span>
+        <a href="{{ url_for('peminjaman') }}" class="btn btn-outline btn-sm">Lihat Semua</a>
+      </div>
+      <div class="card-body">
+        {% if recent_pinjam %}
+        <table>
+          <thead><tr><th>Barang</th><th>Peminjam</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for p in recent_pinjam %}
+          <tr>
+            <td>
+              <div style="font-weight:500">{{ p.nama_barang }}</div>
+              <div style="font-size:.72rem;color:var(--muted)">{{ p.jumlah }} unit · {{ p.tanggal_pinjam }}</div>
+            </td>
+            <td>
+              <div style="font-weight:500">{{ p.peminjam }}</div>
+              <div style="font-size:.72rem;color:var(--muted)">{{ p.divisi }}</div>
+            </td>
+            <td>
+              {% if p.status == 'dipinjam' %}
+                <span class="badge badge-warning">Dipinjam</span>
+              {% else %}
+                <span class="badge badge-success">Kembali</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state"><div class="empty-icon">◷</div>Belum ada peminjaman</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">// BARANG PALING SERING DIPINJAM</span>
+      </div>
+      <div class="card-body">
+        {% if top_items %}
+        <table>
+          <thead><tr><th>Barang</th><th>Frekuensi</th><th>Total Unit</th></tr></thead>
+          <tbody>
+          {% for item in top_items %}
+          <tr>
+            <td>
+              <div style="font-weight:500">{{ item.nama }}</div>
+              <div style="font-size:.72rem;color:var(--muted);font-family:var(--mono)">{{ item.kode }}</div>
+            </td>
+            <td><span class="badge badge-info">{{ item.total_pinjam }}×</span></td>
+            <td style="font-family:var(--mono);font-size:.85rem">{{ item.total_unit }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state"><div class="empty-icon">◷</div>Belum ada data</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+fetch('/api/stok-chart').then(r=>r.json()).then(data=>{
+  const colors = ['#00e5ff','#7c3aed','#f59e0b','#10b981','#ef4444','#6366f1'];
+  new Chart(document.getElementById('chartKategori'), {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d=>d.kategori),
+      datasets: [{
+        data: data.map(d=>d.total),
+        backgroundColor: colors.map(c=>c+'33'),
+        borderColor: colors,
+        borderWidth: 2,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { family: 'Space Mono', size: 11 }, padding: 16 }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Data Barang{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">◻ DATA BARANG</div>
+    <div class="page-subtitle">Kelola seluruh inventaris barang</div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <a href="{{ url_for('export_barang') }}" class="btn btn-export btn-sm">↓ Export CSV</a>
+    <a href="{{ url_for('tambah_barang') }}" class="btn btn-primary btn-sm">+ Tambah Barang</a>
+  </div>
+</div>
+<div class="content">
+  <!-- SEARCH -->
+  <form method="get" class="search-bar">
+    <input type="text" name="q" value="{{ q }}" placeholder="🔍  Cari nama atau kode barang...">
+    <select name="kategori">
+      <option value="">Semua Kategori</option>
+      {% for k in kategori_list %}
+      <option value="{{ k.kategori }}" {% if kat == k.kategori %}selected{% endif %}>{{ k.kategori }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    {% if q or kat %}<a href="{{ url_for('barang') }}" class="btn btn-outline">Reset</a>{% endif %}
+  </form>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">// {{ items|length }} BARANG DITEMUKAN</span>
+    </div>
+    <div class="card-body">
+      {% if items %}
+      <table>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Nama Barang</th>
+            <th>Kategori</th>
+            <th>Stok</th>
+            <th>Status Stok</th>
+            <th>Lokasi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td><span style="font-family:var(--mono);font-size:.8rem;color:var(--accent)">{{ item.kode }}</span></td>
+            <td>
+              <div style="font-weight:500">{{ item.nama }}</div>
+              {% if item.deskripsi %}<div style="font-size:.72rem;color:var(--muted)">{{ item.deskripsi[:50] }}</div>{% endif %}
+            </td>
+            <td>
+              {% if item.kategori == 'Elektronik' %}<span class="badge badge-info">
+              {% elif item.kategori == 'Furnitur' %}<span class="badge badge-purple">
+              {% elif item.kategori == 'ATK' %}<span class="badge badge-warning">
+              {% else %}<span class="badge badge-info">{% endif %}
+              {{ item.kategori }}</span>
+            </td>
+            <td>
+              <span style="font-family:var(--mono);font-weight:700;color:{% if item.stok <= item.stok_min %}var(--danger){% elif item.stok <= item.stok_min * 2 %}var(--accent3){% else %}var(--success){% endif %}">
+                {{ item.stok }}
+              </span>
+              <span style="font-size:.72rem;color:var(--muted)"> {{ item.satuan }}</span>
+            </td>
+            <td>
+              {% set pct = [[(item.stok / (item.stok_min * 3) * 100)|int, 100]|min, 0]|max %}
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="stok-bar">
+                  <div class="stok-bar-fill" style="width:{{ pct }}%;background:{% if item.stok <= item.stok_min %}var(--danger){% elif item.stok <= item.stok_min*2 %}var(--accent3){% else %}var(--success){% endif %}"></div>
+                </div>
+                {% if item.stok <= item.stok_min %}
+                  <span class="badge badge-danger" style="font-size:.6rem">Kritis</span>
+                {% elif item.stok <= item.stok_min * 2 %}
+                  <span class="badge badge-warning" style="font-size:.6rem">Rendah</span>
+                {% else %}
+                  <span class="badge badge-success" style="font-size:.6rem">Aman</span>
+                {% endif %}
+              </div>
+            </td>
+            <td style="font-size:.8rem;color:var(--muted)">{{ item.lokasi or '-' }}</td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <a href="{{ url_for('edit_barang', id=item.id) }}" class="btn btn-outline btn-sm">Edit</a>
+                <form method="post" action="{{ url_for('hapus_barang', id=item.id) }}" onsubmit="return confirm('Hapus barang {{ item.nama }}?')">
+                  <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">◻</div>
+        <div>Tidak ada barang ditemukan</div>
+        <a href="{{ url_for('tambah_barang') }}" class="btn btn-primary" style="margin-top:16px">+ Tambah Barang</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
