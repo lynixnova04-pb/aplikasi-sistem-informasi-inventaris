@@ -4,12 +4,12 @@ import csv
 import io
 from datetime import datetime, date
 import json
-import os
+
 
 app = Flask(__name__)
 DB = 'inventaris.db'
 
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 
 def get_db():
     conn = sqlite3.connect(DB)
